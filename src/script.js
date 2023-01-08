@@ -2,6 +2,7 @@ import "./style.css";
 import * as THREE from "three";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Vector3 } from "three";
 import "./sound";
 import { colorsFloor } from "./color";
@@ -27,6 +28,26 @@ scene.fog = new THREE.Fog(0xffffff, 0, 750);
 const textureLoader = new THREE.TextureLoader();
 const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
 const normalTexture = textureLoader.load("/textures/matcap/normal.jpeg");
+
+/**
+ * Models
+ */
+// GFLT
+const gltfLoader = new GLTFLoader();
+gltfLoader.load("/models/rocket.gltf", (gltf) => {
+  const rocketMesh = gltf.scene;
+  rocketMesh.traverse(function (node) {
+    if (node.isMesh) {
+      node.castShadow = true;
+    }
+  });
+  rocketMesh.scale.set(0.012, 0.012, 0.012);
+  rocketMesh.position.y = 0.85;
+  rocketMesh.position.z = 3.2;
+  rocketMesh.position.x = 3.8;
+  rocketMesh.castShadow = true;
+  scene.add(rocketMesh);
+});
 
 /**
  * Fonts
@@ -166,11 +187,11 @@ scene.add(flagGroup);
  */
 const ambientLight = new THREE.AmbientLight("#FFFFFF", 0.5);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight("#FFFFFF", 1);
+const directionalLight = new THREE.DirectionalLight("#FFFFFF", .85);
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.width = 1024;
 directionalLight.shadow.mapSize.height = 1024;
-directionalLight.position.set(0, 10, 15);
+directionalLight.position.set(0, 15, 15);
 scene.add(directionalLight);
 
 /**
@@ -204,7 +225,7 @@ const cursor = {
 };
 
 window.addEventListener("mousemove", (event) => {
-  cursor.x = (event.clientX / sizes.width - 0.5);
+  cursor.x = event.clientX / sizes.width - 0.5;
   cursor.y = -(event.clientY / sizes.height - 0.5);
 });
 
@@ -303,8 +324,8 @@ const tick = () => {
   flagMesh.geometry.attributes.position.needsUpdate = true;
 
   // Update Camera
-  camera.position.y = Math.max(0.5, ((cursor.y * 2 * -1) + 5));
-  camera.position.x = (cursor.x * 10 * -1);
+  camera.position.y = Math.max(0.5, cursor.y * 2 * -1 + 5);
+  camera.position.x = cursor.x * 10 * -1;
   camera.position.z = Math.cos(cursor.x * (Math.PI / 2)) * 10;
   camera.lookAt(new Vector3());
 
