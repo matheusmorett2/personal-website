@@ -44,7 +44,7 @@ gltfLoader.load("/models/rocket.gltf", (gltf) => {
   rocketMesh.scale.set(0.012, 0.012, 0.012);
   rocketMesh.position.y = 0.85;
   rocketMesh.position.z = 3.2;
-  rocketMesh.position.x = 3.8;
+  rocketMesh.position.x = 4.23;
   rocketMesh.castShadow = true;
   scene.add(rocketMesh);
 });
