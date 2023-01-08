@@ -17,6 +17,17 @@ body {
   background-position: 0 15px, 26px 40px;
 }
 
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: black;
+  }
+
+  .background {
+    background-image: radial-gradient(white 1px, transparent 0),
+      radial-gradient(white 1px, transparent 0);
+  }
+}
+
 .webgl {
   position: fixed;
   top: 0;
