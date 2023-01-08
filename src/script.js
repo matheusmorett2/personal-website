@@ -24,9 +24,9 @@ scene.fog = new THREE.Fog(0xffffff, 0, 750);
 /**
  * Textures
  */
-const flagTexture = new THREE.TextureLoader().load(
-  "/textures/flag/brasil.jpeg"
-);
+const textureLoader = new THREE.TextureLoader();
+const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
+const normalTexture = textureLoader.load("/textures/matcap/normal.jpeg");
 
 /**
  * Fonts
@@ -35,38 +35,33 @@ const fontLoader = new FontLoader();
 
 fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   // Material
-  const material = new THREE.MeshNormalMaterial();
+  const material = new THREE.MeshNormalMaterial({
+    matcap: normalTexture,
+  });
+
+  // Font style
+  const fontSize = isMobile ? 0.25 : 0.5;
+  const fontStyle = {
+    font: font,
+    size: fontSize,
+    height: 0.2,
+    curveSegments: 12,
+    bevelEnabled: true,
+    bevelThickness: 0.03,
+    bevelSize: 0.02,
+    bevelOffset: 0,
+    bevelSegments: 5,
+  };
 
   // Text
-  const fontSize = isMobile ? 0.25 : 0.5;
-  const nameGeometry = new TextGeometry("Matheus Morett", {
-    font: font,
-    size: fontSize,
-    height: 0.2,
-    curveSegments: 12,
-    bevelEnabled: true,
-    bevelThickness: 0.03,
-    bevelSize: 0.02,
-    bevelOffset: 0,
-    bevelSegments: 5,
-  });
+  const nameGeometry = new TextGeometry("Matheus Morett", fontStyle);
   nameGeometry.center();
-  nameGeometry.translate(0, 2, isMobile ? 3 : 2);
+  nameGeometry.translate(0, 2, isMobile ? 2 : 1);
   const nameMesh = new THREE.Mesh(nameGeometry, material);
 
-  const occupationGeometry = new TextGeometry("Software Engineer", {
-    font: font,
-    size: fontSize,
-    height: 0.2,
-    curveSegments: 12,
-    bevelEnabled: true,
-    bevelThickness: 0.03,
-    bevelSize: 0.02,
-    bevelOffset: 0,
-    bevelSegments: 5,
-  });
+  const occupationGeometry = new TextGeometry("Software Engineer", fontStyle);
   occupationGeometry.center();
-  occupationGeometry.translate(0, isMobile ? 1.5 : 1, isMobile ? 3 : 2);
+  occupationGeometry.translate(0, isMobile ? 1.5 : 1, isMobile ? 2 : 1);
   const occupationMesh = new THREE.Mesh(occupationGeometry, material);
 
   const groupText = new THREE.Group();
@@ -78,13 +73,13 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
 // Floor
 const floorGeometry = new THREE.PlaneGeometry(20, 20);
 floorGeometry.rotateX(-Math.PI / 2);
-
 floorGeometry.setAttribute(
   "color",
   new THREE.Float32BufferAttribute(colorsFloor, 3)
 );
-const floorMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
+const floorMaterial = new THREE.MeshStandardMaterial({ vertexColors: true });
 const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+floor.receiveShadow = true; //default
 scene.add(floor);
 
 // Objects
@@ -139,7 +134,9 @@ const poleMaterial = new THREE.MeshPhongMaterial({
   shininess: 30,
 });
 const poleMesh = new THREE.Mesh(poleGeometry, poleMaterial);
+poleMesh.castShadow = true;
 poleMesh.position.set(-5, 0.4, 3);
+
 const [sizeW, sizeH, segW, segH] = [1.5, 1, 10, 10];
 const flagGeometry = new THREE.PlaneGeometry(sizeW, sizeH, segW, segH);
 const flagMaterial = new THREE.MeshLambertMaterial({
@@ -148,6 +145,7 @@ const flagMaterial = new THREE.MeshLambertMaterial({
 });
 const flagMesh = new THREE.Mesh(flagGeometry, flagMaterial);
 flagMesh.position.set(-4.2, 1.3, 2.95);
+flagMesh.castShadow = true;
 
 const flagGroup = new THREE.Group();
 flagGroup.add(poleMesh);
@@ -166,11 +164,14 @@ scene.add(flagGroup);
 /**
  * Lights
  */
-const light = new THREE.DirectionalLight("#FFFFFF");
-light.position.set(10, 50, 100);
-scene.add(light);
-const ambientLight = new THREE.AmbientLight("#999999");
+const ambientLight = new THREE.AmbientLight("#FFFFFF", 0.5);
 scene.add(ambientLight);
+const directionalLight = new THREE.DirectionalLight("#FFFFFF", 1);
+directionalLight.castShadow = true;
+directionalLight.shadow.mapSize.width = 1024;
+directionalLight.shadow.mapSize.height = 1024;
+directionalLight.position.set(0, 10, 15);
+scene.add(directionalLight);
 
 /**
  * Sizes
@@ -203,7 +204,7 @@ const cursor = {
 };
 
 window.addEventListener("mousemove", (event) => {
-  cursor.x = event.clientX / sizes.width - 0.5;
+  cursor.x = (event.clientX / sizes.width - 0.5);
   cursor.y = -(event.clientY / sizes.height - 0.5);
 });
 
@@ -215,7 +216,6 @@ window.addEventListener(
     zoom += event.deltaY * -0.01; /// adjust it
     zoom = Math.min(Math.max(0.5, zoom), 4); /// clamp the value
 
-    console.log(zoom);
     camera.zoom = zoom; /// assign new zoom value
     camera.updateProjectionMatrix(); /// make the changes take effect
   },
@@ -257,6 +257,7 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
 
 // Clock
 const clock = new THREE.Clock();
@@ -302,7 +303,8 @@ const tick = () => {
   flagMesh.geometry.attributes.position.needsUpdate = true;
 
   // Update Camera
-  camera.position.x = cursor.x * 10;
+  camera.position.y = Math.max(0.5, ((cursor.y * 2 * -1) + 5));
+  camera.position.x = (cursor.x * 10 * -1);
   camera.position.z = Math.cos(cursor.x * (Math.PI / 2)) * 10;
   camera.lookAt(new Vector3());
 
