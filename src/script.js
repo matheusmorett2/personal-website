@@ -27,7 +27,6 @@ scene.fog = new THREE.Fog(0xffffff, 0, 750);
  */
 const textureLoader = new THREE.TextureLoader();
 const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
-const normalTexture = textureLoader.load("/textures/matcap/normal.jpeg");
 
 /**
  * Models
