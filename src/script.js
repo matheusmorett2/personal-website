@@ -46,6 +46,15 @@ gltfLoader.load("/models/rocket.gltf", (gltf) => {
   rocketMesh.position.z = 3.2;
   rocketMesh.position.x = 4.23;
   rocketMesh.castShadow = true;
+
+  if (isMobile) {
+    rocketMesh.scale.set(0.006, 0.006, 0.006);
+    rocketMesh.position.z = -2.75;
+    rocketMesh.position.x = 1.85;
+    rocketMesh.position.y = 0.4;
+    
+  }
+
   scene.add(rocketMesh);
 });
 
@@ -187,7 +196,7 @@ scene.add(flagGroup);
  */
 const ambientLight = new THREE.AmbientLight("#FFFFFF", 0.5);
 scene.add(ambientLight);
-const directionalLight = new THREE.DirectionalLight("#FFFFFF", .85);
+const directionalLight = new THREE.DirectionalLight("#FFFFFF", 0.85);
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.width = 1024;
 directionalLight.shadow.mapSize.height = 1024;
