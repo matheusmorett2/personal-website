@@ -51,7 +51,6 @@ gltfLoader.load("/models/rocket.gltf", (gltf) => {
     rocketMesh.position.z = -2.75;
     rocketMesh.position.x = 1.85;
     rocketMesh.position.y = 0.4;
-    
   }
 
   scene.add(rocketMesh);
@@ -64,9 +63,7 @@ const fontLoader = new FontLoader();
 
 fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
   // Material
-  const material = new THREE.MeshNormalMaterial({
-    matcap: normalTexture,
-  });
+  const material = new THREE.MeshNormalMaterial();
 
   // Font style
   const fontSize = isMobile ? 0.25 : 0.5;
