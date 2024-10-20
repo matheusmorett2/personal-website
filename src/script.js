@@ -1,20 +1,25 @@
 import "./style.css";
-import * as THREE from "three";
-import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
-import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { Vector3 } from "three";
 import "./sound";
-import { colorsFloor } from "./color";
+
+import * as THREE from "three";
+
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { GUI } from "lil-gui";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { isMobile } from "./utils";
-import * as dat from "lil-gui";
+
+const gui = new GUI();
+
+
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+};
 
 /**
- * Debug
+ * Canvas
  */
-// const gui = new dat.GUI();
-
-// Canvas
 const canvas = document.querySelector("canvas.webgl");
 
 // Scene
@@ -31,7 +36,10 @@ const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
 /**
  * Models
  */
-// GFLT
+// Criar o grupo para o planeta e os objetos
+const planetGroup = new THREE.Group();
+
+// GFLT - Carregar o foguete
 const gltfLoader = new GLTFLoader();
 gltfLoader.load("/models/rocket.gltf", (gltf) => {
   const rocketMesh = gltf.scene;
@@ -46,27 +54,18 @@ gltfLoader.load("/models/rocket.gltf", (gltf) => {
   rocketMesh.position.x = 4.23;
   rocketMesh.castShadow = true;
 
-  if (isMobile) {
-    rocketMesh.scale.set(0.006, 0.006, 0.006);
-    rocketMesh.position.z = -2.75;
-    rocketMesh.position.x = 1.85;
-    rocketMesh.position.y = 0.4;
-  }
-
-  scene.add(rocketMesh);
+  // Adiciona o foguete ao grupo do planeta
+  planetGroup.add(rocketMesh);
 });
 
 /**
  * Fonts
  */
+let groupText
 const fontLoader = new FontLoader();
-
 fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
-  // Material
   const material = new THREE.MeshNormalMaterial();
-
-  // Font style
-  const fontSize = isMobile ? 0.25 : 0.5;
+  const fontSize = 0.5;
   const fontStyle = {
     font: font,
     size: fontSize,
@@ -79,76 +78,73 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
     bevelSegments: 5,
   };
 
-  // Text
   const nameGeometry = new TextGeometry("Matheus Morett", fontStyle);
   nameGeometry.center();
-  nameGeometry.translate(0, 2, isMobile ? 2 : 1);
   const nameMesh = new THREE.Mesh(nameGeometry, material);
+  nameMesh.position.y = 3.5; // Ajustar a altura do nome acima do planeta
 
   const occupationGeometry = new TextGeometry("Software Engineer", fontStyle);
   occupationGeometry.center();
-  occupationGeometry.translate(0, isMobile ? 1.5 : 1, isMobile ? 2 : 1);
   const occupationMesh = new THREE.Mesh(occupationGeometry, material);
+  occupationMesh.position.y = 2.5; // Ajustar a altura do nome acima do planeta
 
-  const groupText = new THREE.Group();
+  groupText = new THREE.Group();
   groupText.add(nameMesh);
   groupText.add(occupationMesh);
-  scene.add(groupText);
+  groupText.position.z = 3
+
+  const folder = gui.addFolder("Text Position");
+  folder.add(groupText.position, "x", -10, 10).name("Position X");
+  folder.add(groupText.position, "y", -10, 10).name("Position Y");
+  folder.add(groupText.position, "z", -10, 10).name("Position Z");
+  folder.open();
+
+  // Adiciona o texto ao grupo do planeta
+  planetGroup.add(groupText);
 });
 
-// Floor
-const floorGeometry = new THREE.PlaneGeometry(20, 20);
-floorGeometry.rotateX(-Math.PI / 2);
-floorGeometry.setAttribute(
-  "color",
-  new THREE.Float32BufferAttribute(colorsFloor, 3)
-);
-const floorMaterial = new THREE.MeshStandardMaterial({ vertexColors: true });
-const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-floor.receiveShadow = true; //default
-scene.add(floor);
+/**
+ * Planeta com texturas
+ */
+const platRadius = 120 / 2;
+const baseColor = textureLoader.load("/textures/planets/Substance_graph_Base_Color.png");
+const normalMap = textureLoader.load("/textures/planets/Substance_graph_Normal.png");
+const heightMap = textureLoader.load("/textures/planets/Substance_graph_Height.png");
+const roughnessMap = textureLoader.load("/textures/planets/Substance_graph_Roughness.png");
+const metallicMap = textureLoader.load("/textures/planets/Substance_graph_Metallic.png");
+const aoMap = textureLoader.load("/textures/planets/Substance_graph_Ambient_Occlusion.png");
 
-// Objects
-const baseMaterial = new THREE.MeshNormalMaterial({
-  opacity: 0.2,
-  transparent: true,
+const planetMaterial = new THREE.MeshStandardMaterial({
+  normalMap: normalMap,        // Usa apenas o normal map para criar relevos e detalhes de luz
+  displacementMap: heightMap,  // Usar o displacement para criar o relevo
+  displacementScale: 0.1,      // Escala do displacement
+  roughnessMap: roughnessMap,  // Controle de rugosidade para reflexos
+  roughness: 0.8,              // Ajustar rugosidade geral
+  metalnessMap: metallicMap,   // Controle de efeito metálico
+  metalness: 0.5,              // Ajustar efeito metálico
+  aoMap: aoMap,                // Ambient Occlusion para sombras suaves
+  aoMapIntensity: 1.0,         // Intensidade do ambient occlusion
+  displacementScale: 1
 });
 
-// Cube
-const cubeList = [];
-const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-for (let i = 0; i < 7; i++) {
-  const mesh = new THREE.Mesh(cubeGeometry, baseMaterial);
-  mesh.position.y = (Math.random() + 0.5) * 1.5;
-  mesh.position.x = (Math.random() - 0.5) * 15;
-  mesh.position.z = (Math.random() - 1) * 10;
-  cubeList.push(mesh);
-  scene.add(mesh);
-}
 
-// torus
-const torusList = [];
-const torusGeometry = new THREE.TorusGeometry(0.3, 0.2, 16, 32);
-for (let i = 0; i < 5; i++) {
-  const mesh = new THREE.Mesh(torusGeometry, baseMaterial);
-  mesh.position.y = (Math.random() + 0.5) * 2;
-  mesh.position.x = (Math.random() - 0.5) * 20;
-  mesh.position.z = (Math.random() - 1) * 10;
-  torusList.push(mesh);
-  scene.add(mesh);
-}
+const planetFolder = gui.addFolder('Planet Controls');
+planetFolder.addColor(planetMaterial, 'color').name('Planet Color'); // Cor do planeta
+planetFolder.add(planetMaterial, 'metalness', 0, 1).name('Metalness'); // Efeito metálico
+planetFolder.add(planetMaterial, 'roughness', 0, 1).name('Roughness'); // Rugosidade
+planetFolder.add(planetMaterial, 'displacementScale', 0, 1).name('Displacement Scale'); // Escala do displacement (altura)
+planetFolder.add(planetMaterial, 'aoMapIntensity', 0, 3).name('AO Intensity'); // Intensidade da Ambient Occlusion
+planetFolder.addColor(planetMaterial, 'emissive').name('Emissive Color'); // Cor de emissão
+planetFolder.add(planetMaterial, 'emissiveIntensity', 0, 1).name('Emissive Intensity'); // Intensidade da emissão
+planetFolder.open();
 
-// OctahedronGeometry
-const octahedronsList = [];
-const octahedronGeometry = new THREE.OctahedronGeometry(1);
-for (let i = 0; i < 5; i++) {
-  const mesh = new THREE.Mesh(octahedronGeometry, baseMaterial);
-  mesh.position.y = (Math.random() - 0.5) * 4;
-  mesh.position.x = (Math.random() - 0.5) * 15;
-  mesh.position.z = (Math.random() - 1) * 10;
-  octahedronsList.push(mesh);
-  scene.add(mesh);
-}
+const planetGeometry = new THREE.SphereGeometry(platRadius, 64, 64);
+const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+planetMesh.position.set(0, -platRadius, 0);
+planetMesh.receiveShadow = true;
+planetMesh.rotation.x = Math.PI / 2; // Ajuste no eixo X
+planetMesh.rotation.y = Math.PI; // Ajuste no eixo Y
+planetGroup.add(planetMesh);
 
 /**
  * Flag
@@ -176,102 +172,70 @@ flagMesh.castShadow = true;
 const flagGroup = new THREE.Group();
 flagGroup.add(poleMesh);
 flagGroup.add(flagMesh);
+planetGroup.add(flagGroup); // Adicionar a bandeira ao grupo do planeta
 
-if (isMobile) {
-  flagGroup.scale.set(0.5, 0.5, -1);
-}
-
-if (!isMobile) {
-  flagGroup.position.x = 0;
-}
-
-scene.add(flagGroup);
+// Adicionar o grupo à cena
+scene.add(planetGroup);
 
 /**
  * Lights
  */
 const ambientLight = new THREE.AmbientLight("#FFFFFF", 0.5);
 scene.add(ambientLight);
+
 const directionalLight = new THREE.DirectionalLight("#FFFFFF", 0.85);
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.width = 1024;
 directionalLight.shadow.mapSize.height = 1024;
 directionalLight.position.set(0, 15, 15);
 scene.add(directionalLight);
+const blueLight = new THREE.PointLight(0x0000ff, 0.5); // Luz azul
+blueLight.position.set(0, 15, 15);
+scene.add(blueLight);
 
 /**
- * Sizes
+ * GUI for Lights
  */
-const sizes = {
-  width: window.innerWidth,
-  height: window.innerHeight,
-};
+const lightFolder = gui.addFolder("Lights");
 
-window.addEventListener("resize", () => {
-  // Update sizes
-  sizes.width = window.innerWidth;
-  sizes.height = window.innerHeight;
+// Ambient Light controls
+lightFolder.addColor(ambientLight, 'color').name('Ambient Light Color');
+lightFolder.add(ambientLight, 'intensity', 0, 2).name('Ambient Intensity');
 
-  // Update camera
-  camera.aspect = sizes.width / sizes.height;
-  camera.updateProjectionMatrix();
+// Directional Light controls
+lightFolder.addColor(directionalLight, 'color').name('Directional Light Color');
+lightFolder.add(directionalLight, 'intensity', 0, 2).name('Directional Intensity');
+lightFolder.add(directionalLight.position, 'x', -50, 50).name('Directional X');
+lightFolder.add(directionalLight.position, 'y', -50, 50).name('Directional Y');
+lightFolder.add(directionalLight.position, 'z', -50, 50).name('Directional Z');
 
-  // Update renderer
-  renderer.setSize(sizes.width, sizes.height);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-});
+// Blue Point Light controls
+lightFolder.addColor(blueLight, 'color').name('Blue Light Color');
+lightFolder.add(blueLight, 'intensity', 0, 2).name('Blue Light Intensity');
+lightFolder.add(blueLight.position, 'x', -50, 50).name('Blue Light X');
+lightFolder.add(blueLight.position, 'y', -50, 50).name('Blue Light Y');
+lightFolder.add(blueLight.position, 'z', -50, 50).name('Blue Light Z');
 
-/**
- * Cursor
- */
-const cursor = {
-  x: 0,
-  y: 0,
-};
-
-window.addEventListener("mousemove", (event) => {
-  cursor.x = event.clientX / sizes.width - 0.5;
-  cursor.y = -(event.clientY / sizes.height - 0.5);
-});
-
-window.addEventListener(
-  "mousewheel",
-  (event) => {
-    event.preventDefault();
-    let zoom = camera.zoom; // take current zoom value
-    zoom += event.deltaY * -0.01; /// adjust it
-    zoom = Math.min(Math.max(0.5, zoom), 4); /// clamp the value
-
-    camera.zoom = zoom; /// assign new zoom value
-    camera.updateProjectionMatrix(); /// make the changes take effect
-  },
-  { passive: false }
-);
-
-window.addEventListener("touchmove", (event) => {
-  const touch = event.touches[0];
-  const x = touch.pageX;
-  const y = touch.pageY;
-  cursor.x = x / sizes.width - 0.5;
-  cursor.y = -(y / sizes.height - 0.5);
-});
+lightFolder.open();
 
 /**
  * Camera
  */
-const camera = new THREE.PerspectiveCamera(
-  45,
-  sizes.width / sizes.height,
-  0.1,
-  100
-);
-camera.position.y = 5;
-camera.position.z = 10;
-camera.rotation.x = -0.37;
-camera.rotation.y = 0.25;
-camera.rotation.z = 0.09;
+const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 100);
+camera.position.y = isMobile ? 14.5 : 6.5;
+camera.position.z = isMobile ? 30 : 12;
+camera.rotation.x = -Math.PI / 7;
+planetGroup.add(camera); // A câmera agora segue a rotação do planeta
 
-scene.add(camera);
+const cameraFolder = gui.addFolder("Camera Controls");
+cameraFolder.add(camera.position, "x", -50, 50).name("Position X");
+cameraFolder.add(camera.position, "y", -50, 50).name("Position Y");
+cameraFolder.add(camera.position, "z", -50, 50).name("Position Z");
+cameraFolder.add(camera.rotation, "x", -Math.PI, Math.PI).name("Rotation X");
+cameraFolder.add(camera.rotation, "y", -Math.PI, Math.PI).name("Rotation Y");
+cameraFolder.add(camera.rotation, "z", -Math.PI, Math.PI).name("Rotation Z");
+cameraFolder.open();
+
 
 /**
  * Renderer
@@ -285,29 +249,191 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 
-// Clock
-const clock = new THREE.Clock();
+/**
+ * Tamanho
+ */
+window.addEventListener("resize", () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
+// Create and inject the About Me panel into the DOM
+let aboutMeShown = false;
+
+function createAboutMePanel() {
+  const panel = document.createElement("div");
+  panel.id = "aboutMePanel";
+
+  const closeButton = document.createElement("button");
+  closeButton.classList.add("close-btn");
+  closeButton.textContent = "X";
+  closeButton.style.position = "absolute";
+  closeButton.style.top = "20px";
+  closeButton.style.right = "30px";
+  closeButton.style.fontSize = "24px";
+  closeButton.style.cursor = "pointer";
+  closeButton.style.color = "white";
+  closeButton.style.background = "none";
+  closeButton.style.border = "none";
+  closeButton.onclick = closeAboutMe;
+
+  const aboutContent = document.createElement("div");
+  aboutContent.classList.add("about-content");
+
+  const heading = document.createElement("h1");
+  heading.textContent = "About Me";
+
+  const experienceYears = new Date().getFullYear() - 2016;
+
+  const aboutMeText = `
+    Hi, I'm Matheus Morett, a passionate software engineer with over ${experienceYears} years of professional experience in the tech industry. 
+    From the moment I wrote my first line of code in January 2014, I’ve been dedicated to crafting solutions that don’t just work but excel.
+    <br><br>
+    Throughout my career, I’ve been fortunate to collaborate with both early and late-stage startups, 
+    delivering impactful products that have reached millions of users worldwide. I thrive in fast-paced environments 
+    where innovation is key, always pushing boundaries to bring the best possible user experiences to life.
+    <br><br>
+    While I’m a FullStack developer with a focus on FrontEnd, I embrace every challenge. 
+    My true passion lies in solving complex problems and bringing high-quality solutions to market.
+    <br><br>
+    My primary tech stack includes TypeScript, React, and Node, but I’m constantly learning and growing to stay ahead of the curve. 
+    <br><br>
+    Right now, what excites me most is building scalable, testable, and maintainable software—engineering solutions 
+    that not only work today but will stand the test of time.
+  `;
+
+
+  const paragraph = document.createElement("p");
+  paragraph.innerHTML = aboutMeText;
+
+  aboutContent.appendChild(heading);
+  aboutContent.appendChild(paragraph);
+  panel.appendChild(closeButton);
+  panel.appendChild(aboutContent);
+
+  document.body.appendChild(panel);
+}
+
+function showAboutMe() {
+  const panel = document.getElementById("aboutMePanel");
+  if (panel) {
+    panel.style.display = "flex";
+  }
+}
+
+function closeAboutMe() {
+  aboutMeShown = false;
+  const panel = document.getElementById("aboutMePanel");
+  if (panel) {
+    panel.style.display = "none";
+  }
+}
+
+// Create the About Me panel when the page loads
+createAboutMePanel();
 
 /**
- * Animate
+ * Zoom no scroll com movimento leve de X e Y
  */
+let cameraOffsetX = 0;
+let cameraOffsetY = 0;
+const maxOffset = 0.5; // O quanto a câmera pode se mover para esquerda/direita e cima/baixo
+const zoomFocusOffsetY = 1; // O quanto o foco do zoom está acima (ajustar conforme desejado)
+const cammeraOutToShowAboutMe = isMobile ? 50 : 30
+
+window.addEventListener("wheel", (event) => {
+  event.preventDefault();
+
+  if (aboutMeShown) {
+    return;
+  }
+
+  // Zoom in/out
+  camera.position.z += event.deltaY * 0.1;
+  camera.position.z = Math.min(Math.max(camera.position.z, 10), cammeraOutToShowAboutMe);
+
+  // Mover a câmera levemente nos eixos X e Y conforme o zoom
+  cameraOffsetX += event.deltaX * 0.002; // Movimento suave no eixo X
+  cameraOffsetY += event.deltaY * 0.002; // Movimento suave no eixo Y
+
+  // Limitar o movimento nos eixos X e Y
+  cameraOffsetX = Math.min(Math.max(cameraOffsetX, -maxOffset), maxOffset);
+  cameraOffsetY = Math.min(Math.max(cameraOffsetY, -maxOffset), maxOffset);
+
+  // Ajustar a posição da câmera com o foco acima
+  camera.position.x = cameraOffsetX;
+  camera.position.y = (camera.position.z / 10) * 4.5 + cameraOffsetY + zoomFocusOffsetY; // Ajustar a altura para o foco acima
+
+  camera.updateProjectionMatrix();
+
+  if (camera.position.z >= cammeraOutToShowAboutMe) {
+    showAboutMe();
+    aboutMeShown = true;
+  }
+});
+
+
+/**
+ * Estrelas
+ */
+const starsList = [];
+export function createStars() {
+  const starGeometry = new THREE.SphereGeometry(0.05, 24, 24);
+  const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+  const starCount = 1000;
+  const radius = 150;
+
+  for (let i = 0; i < starCount; i++) {
+    const star = new THREE.Mesh(starGeometry, starMaterial);
+    star.position.x = (Math.random() - 0.5) * radius;
+    star.position.y = (Math.random() - 0.5) * radius;
+    star.position.z = (Math.random() - 0.5) * radius;
+    starsList.push(star);
+    scene.add(star);
+  }
+}
+
+/**
+ * Mini gravidade
+ */
+let gravitySpeed = 1; // Velocidade de flutuação
+let gravityAmplitude = 0.1; // Amplitude da flutuação
+
+
+/**
+ * Animação
+ */
+const clock = new THREE.Clock();
 const tick = () => {
+  // Rotacionar o grupo do planeta e seus objetos
+  planetGroup.rotation.y += 0.0003;
+
   // Clock
   const elapsedTime = clock.getElapsedTime();
 
-  // Animate objects
-  for (const octahedron of octahedronsList) {
-    octahedron.position.y = Math.sin(elapsedTime) + 2;
+  // Gravidade texto
+  if (groupText) {
+    groupText.position.y = Math.sin(elapsedTime * gravitySpeed) * gravityAmplitude;
   }
 
-  for (const cube of cubeList) {
-    cube.rotation.y = elapsedTime;
-    cube.rotation.x = elapsedTime;
-  }
 
-  for (const torus of torusList) {
-    torus.rotation.y = 0.5 * elapsedTime;
-    torus.rotation.x = 0.5 * elapsedTime;
+  // Mover estrelas para simular o movimento de esquerda para direita ao fundo
+  for (const star of starsList) {
+    star.position.x += 0.01; // Movimentação para a direita
+    star.position.z += 0.01; // Movimentação ao fundo
+
+    // Se a estrela passar de uma certa posição, ela volta ao ponto inicial
+    if (star.position.x > 250) {
+      star.position.x = -250;
+    }
+    if (star.position.z > 250) {
+      star.position.z = -250;
+    }
   }
 
   // Update flag
@@ -327,13 +453,6 @@ const tick = () => {
   }
 
   flagMesh.geometry.attributes.position.needsUpdate = true;
-
-  // Update Camera
-  camera.position.y = Math.max(0.5, cursor.y * 2 * -1 + 5);
-  camera.position.x = cursor.x * 10 * -1;
-  camera.position.z = Math.cos(cursor.x * (Math.PI / 2)) * 10;
-  camera.lookAt(new Vector3());
-
   // Render
   renderer.render(scene, camera);
 
@@ -341,4 +460,7 @@ const tick = () => {
   window.requestAnimationFrame(tick);
 };
 
+gui.hide()
+
 tick();
+createStars();
