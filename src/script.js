@@ -7,10 +7,10 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GUI } from "lil-gui";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+import { gsap } from "gsap";
 import { isMobile } from "./utils";
 
 const gui = new GUI();
-
 
 const sizes = {
   width: window.innerWidth,
@@ -36,13 +36,126 @@ const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
 /**
  * Models
  */
+
+let rocketMesh;
+let particles = [];
+
+// Função para criar as partículas de fogo
+function createFireParticles() {
+  const particleCount = 5; // Número de partículas para criar de uma vez
+  const spread = 0.3; // Distância de espalhamento ao redor da base do foguete
+
+  for (let i = 0; i < particleCount; i++) {
+    const particleGeometry = new THREE.SphereGeometry(0.05, 6, 6); // Pequeninas esferas
+    const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500 }); // Cor laranja de fogo
+
+    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+
+    // Posicionar a partícula na posição do foguete
+    particle.position.copy(rocketMesh.position);
+
+    // Ajustar a posição da partícula para que se espalhe ao redor do foguete
+    particle.position.x += (Math.random() - 0.5) * spread; // Espalha no eixo X
+    particle.position.y -= 0.5; // Ajustar para ficar abaixo do foguete
+    particle.position.z += (Math.random() - 0.5) * spread; // Espalha no eixo Z
+
+    scene.add(particle);
+
+    // Adiciona a partícula à lista para animar depois
+    particles.push(particle);
+
+    // Remover partícula após um tempo para não sobrecarregar a cena
+    setTimeout(() => {
+      scene.remove(particle);
+      particles = particles.filter(p => p !== particle); // Remove da lista
+    }, 500); // Partícula "vive" por 500ms
+  }
+}
+
+
+// Atualizar as partículas para simular movimento para baixo
+function updateParticles() {
+  particles.forEach(particle => {
+    particle.position.y -= 0.05; // Faz a partícula cair
+    particle.scale.multiplyScalar(0.95); // Diminui o tamanho para simular dissipação
+  });
+}
+
+
+// Função para animar o foguete subindo com partículas de fogo
+function animateRocket() {
+  gsap.to(rocketMesh.position, {
+    y: 30, // Faz o foguete subir para a posição Y = 30
+    duration: 2, // A duração da animação (em segundos)
+    ease: "power2.inOut",  // Efeito de aceleração
+    onUpdate: createFireParticles, // Criar partículas durante a animação
+  });
+
+  // Animação de contração no eixo Y
+  gsap.to(rocketMesh.scale, {
+    y: 0.015, // Simular contração no eixo Y enquanto sobe
+    duration: 0.5,
+    repeat: false, // Repetir indefinidamente
+  });
+}
+
+// Detectar clique no foguete
+const audioRocket = new Audio("/sound/rocket.mp3"); // Carregar o som do foguete
+window.addEventListener("click", (event) => {
+  // Atualiza a posição do mouse com base no clique
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Atualiza o raycaster com a posição do mouse
+  raycaster.setFromCamera(mouse, camera);
+
+  // Detecta as interseções
+  const intersects = raycaster.intersectObject(rocketMesh, true);
+
+  if (intersects.length > 0) {
+    // Se houver interseção, anima o foguete
+    audioRocket.volume = 0.3
+    audioRocket.play();
+    animateRocket();
+  }
+});
+
 // Criar o grupo para o planeta e os objetos
 const planetGroup = new THREE.Group();
 
 // GFLT - Carregar o foguete
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2(); // Para armazenar as coordenadas do mouse
+
+let rocketHovered = false; // Para controlar o estado do hover
+
+// Detectar hover e clique no foguete
+window.addEventListener("mousemove", (event) => {
+  // Atualiza a posição do mouse com base no movimento
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Atualiza o raycaster com a posição do mouse
+  raycaster.setFromCamera(mouse, camera);
+
+  // Detecta as interseções
+  const intersects = raycaster.intersectObject(rocketMesh, true);
+
+  if (intersects.length > 0) {
+    // Se o mouse estiver sobre o foguete, mudar o cursor para pointer
+    document.body.style.cursor = "pointer";
+    rocketHovered = true;
+  } else {
+    // Caso contrário, mudar o cursor de volta para o padrão
+    document.body.style.cursor = "default";
+    rocketHovered = false;
+  }
+});
+
+// Carregar o foguete com o GLTFLoader
 const gltfLoader = new GLTFLoader();
 gltfLoader.load("/models/rocket.gltf", (gltf) => {
-  const rocketMesh = gltf.scene;
+  rocketMesh = gltf.scene;
   rocketMesh.traverse(function (node) {
     if (node.isMesh) {
       node.castShadow = true;
@@ -107,7 +220,6 @@ fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
  * Planeta com texturas
  */
 const platRadius = 120 / 2;
-const baseColor = textureLoader.load("/textures/planets/Substance_graph_Base_Color.png");
 const normalMap = textureLoader.load("/textures/planets/Substance_graph_Normal.png");
 const heightMap = textureLoader.load("/textures/planets/Substance_graph_Height.png");
 const roughnessMap = textureLoader.load("/textures/planets/Substance_graph_Roughness.png");
@@ -453,6 +565,9 @@ const tick = () => {
   }
 
   flagMesh.geometry.attributes.position.needsUpdate = true;
+
+  updateParticles(); // Atualiza a posição das partículas de fogo do foguete
+
   // Render
   renderer.render(scene, camera);
 
