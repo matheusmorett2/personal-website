@@ -97,7 +97,7 @@ function updateMousePosition(event) {
 }
 
 const CONTENT_0 = `
-  My favorite music genre is Metal, and my favorite band is Angra. <br><br>
+  My favorite music genre is Metal, my favorite band is Angra. <br><br>
   <img src="/images/angra.jpeg" width="350' alt="Me with my friend at Angra concert" />
 `
 
@@ -107,7 +107,7 @@ const CONTENT_1 = `
 `
 
 const CONTENT_2 = `
-  I lived in Europe as a Digital Nomad for a year, and my favorite country was Bosnia and Herzegovina<br><br>
+  I lived in Europe as a Digital Nomad for a year, my favorite country was Bosnia and Herzegovina<br><br>
   <img src="/images/bosnia.jpeg" width="350' alt="Me at Bosnia and Herzegovina" />
 `
 
