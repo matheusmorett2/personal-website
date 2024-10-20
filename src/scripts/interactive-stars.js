@@ -107,7 +107,7 @@ const CONTENT_1 = `
 `
 
 const CONTENT_2 = `
-  I lived in Europe as a Digital Nomad for a year, my favorite country was Bosnia and Herzegovina<br><br>
+  I lived in Europe as a Digital Nomad for a year, my favorite country was Bosnia and Herzegovina.<br><br>
   <img src="/images/bosnia.jpeg" width="350' alt="Me at Bosnia and Herzegovina" />
 `
 
