@@ -326,10 +326,10 @@ function showAboutMe() {
 }
 
 function closeAboutMe() {
-  aboutMeShown = false;
   const panel = document.getElementById("aboutMePanel");
   if (panel) {
     panel.style.display = "none";
+    aboutMeShown = false;
   }
 }
 
