@@ -497,8 +497,8 @@ export function createStars() {
   const starGeometry = new THREE.SphereGeometry(0.05, 24, 24);
   const starMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-  const starCount = 1000;
-  const radius = 150;
+  const starCount = 2000;
+  const radius = 125;
 
   for (let i = 0; i < starCount; i++) {
     const star = new THREE.Mesh(starGeometry, starMaterial);
