@@ -9,6 +9,7 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { GUI } from "lil-gui";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 import { createAboutMePanel } from "./scripts/about-me";
+import { initStars } from "./scripts/interactive-stars";
 import { isMobile } from "./utils";
 import { updateParallax } from "./scripts/parallax";
 
@@ -234,6 +235,9 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 
+// Call the interactive stars module
+const stars = initStars(scene, camera, renderer);
+
 /**
  * Tamanho
  */
@@ -320,6 +324,33 @@ export function createStars() {
     scene.add(star);
   }
 }
+
+// Detectar hover e clique no foguete e estrelas
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2(); // Para armazenar as coordenadas do mouse
+window.addEventListener("mousemove", (event) => {
+  // Atualiza a posição do mouse com base no movimento
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // Atualiza o raycaster com a posição do mouse
+  raycaster.setFromCamera(mouse, camera);
+
+  // Detecta as interseções
+  const intersectsWithStar1 = raycaster.intersectObject(stars[0], true);
+  const intersectsWithStar2 = raycaster.intersectObject(stars[1], true);
+  const intersectsWithStar3 = raycaster.intersectObject(stars[2], true);
+  const intersectsWithRocket = raycaster.intersectObject(planetGroup.children[0], true);
+
+  if (intersectsWithStar1.length > 0 || intersectsWithStar2.length > 0 ||
+    intersectsWithStar3.length > 0 || intersectsWithRocket.length > 0) {
+    // Se o mouse estiver sobre o foguete, mudar o cursor para pointer
+    document.body.style.cursor = "pointer";
+  } else {
+    // Caso contrário, mudar o cursor de volta para o padrão
+    document.body.style.cursor = "default";
+  }
+});
 
 /**
  * Mini gravidade

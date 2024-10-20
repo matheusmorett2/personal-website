@@ -117,7 +117,7 @@ a:hover {
   transition: opacity 0.25s;
 }
 
-#aboutMePanel {
+.modal {
   display: none; /* Hidden by default */
   position: fixed;
   font-family: sans-serif;
@@ -135,14 +135,14 @@ a:hover {
   overflow: auto; /* Allow scrolling if content is too long */
 }
 
-#aboutMePanel p{
+.modal p{
   margin-top: 15px;
   max-width: 500px;
   text-align: justify;
   padding: 0 25px;
 }
 
-#aboutMePanel.active {
+.modal.active {
   display: flex; /* Show the panel */
 }
 
@@ -155,4 +155,12 @@ a:hover {
   color: white;
   border: none;
   background: none;
+}
+
+.stars-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  text-align: center !important;
 }

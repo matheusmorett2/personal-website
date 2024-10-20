@@ -1,18 +1,11 @@
 export function createAboutMePanel() {
   const panel = document.createElement("div");
   panel.id = "aboutMePanel";
+  panel.classList.add("modal");
 
   const closeButton = document.createElement("button");
   closeButton.classList.add("close-btn");
   closeButton.textContent = "X";
-  closeButton.style.position = "absolute";
-  closeButton.style.top = "20px";
-  closeButton.style.right = "30px";
-  closeButton.style.fontSize = "24px";
-  closeButton.style.cursor = "pointer";
-  closeButton.style.color = "white";
-  closeButton.style.background = "none";
-  closeButton.style.border = "none";
   closeButton.onclick = closeAboutMe;
 
   const aboutContent = document.createElement("div");
