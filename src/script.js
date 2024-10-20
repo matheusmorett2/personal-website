@@ -3,12 +3,14 @@ import "./sound";
 
 import * as THREE from "three";
 
+import { createRocket, updateRocketParticles } from "./scripts/rocket";
+
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { GUI } from "lil-gui";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { gsap } from "gsap";
+import { createAboutMePanel } from "./scripts/about-me";
 import { isMobile } from "./utils";
+import { updateParallax } from "./scripts/parallax";
 
 const gui = new GUI();
 
@@ -27,149 +29,16 @@ const scene = new THREE.Scene();
 scene.background = null;
 scene.fog = new THREE.Fog(0xffffff, 0, 750);
 
+
+// Criar o grupo para o planeta e os objetos
+const planetGroup = new THREE.Group();
+
 /**
  * Textures
  */
 const textureLoader = new THREE.TextureLoader();
 const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
 
-/**
- * Models
- */
-
-let rocketMesh;
-let particles = [];
-
-// Função para criar as partículas de fogo
-function createFireParticles() {
-  const particleCount = 5; // Número de partículas para criar de uma vez
-  const spread = 0.3; // Distância de espalhamento ao redor da base do foguete
-
-  for (let i = 0; i < particleCount; i++) {
-    const particleGeometry = new THREE.SphereGeometry(0.05, 6, 6); // Pequeninas esferas
-    const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xff4500 }); // Cor laranja de fogo
-
-    const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-
-    // Posicionar a partícula na posição do foguete
-    particle.position.copy(rocketMesh.position);
-
-    // Ajustar a posição da partícula para que se espalhe ao redor do foguete
-    particle.position.x += (Math.random() - 0.5) * spread; // Espalha no eixo X
-    particle.position.y -= 0.5; // Ajustar para ficar abaixo do foguete
-    particle.position.z += (Math.random() - 0.5) * spread; // Espalha no eixo Z
-
-    scene.add(particle);
-
-    // Adiciona a partícula à lista para animar depois
-    particles.push(particle);
-
-    // Remover partícula após um tempo para não sobrecarregar a cena
-    setTimeout(() => {
-      scene.remove(particle);
-      particles = particles.filter(p => p !== particle); // Remove da lista
-    }, 500); // Partícula "vive" por 500ms
-  }
-}
-
-
-// Atualizar as partículas para simular movimento para baixo
-function updateParticles() {
-  particles.forEach(particle => {
-    particle.position.y -= 0.05; // Faz a partícula cair
-    particle.scale.multiplyScalar(0.95); // Diminui o tamanho para simular dissipação
-  });
-}
-
-
-// Função para animar o foguete subindo com partículas de fogo
-function animateRocket() {
-  gsap.to(rocketMesh.position, {
-    y: 30, // Faz o foguete subir para a posição Y = 30
-    duration: 2, // A duração da animação (em segundos)
-    ease: "power2.inOut",  // Efeito de aceleração
-    onUpdate: createFireParticles, // Criar partículas durante a animação
-  });
-
-  // Animação de contração no eixo Y
-  gsap.to(rocketMesh.scale, {
-    y: 0.015, // Simular contração no eixo Y enquanto sobe
-    duration: 0.5,
-    repeat: false, // Repetir indefinidamente
-  });
-}
-
-// Detectar clique no foguete
-const audioRocket = new Audio("/sound/rocket.mp3"); // Carregar o som do foguete
-window.addEventListener("click", (event) => {
-  // Atualiza a posição do mouse com base no clique
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  // Atualiza o raycaster com a posição do mouse
-  raycaster.setFromCamera(mouse, camera);
-
-  // Detecta as interseções
-  const intersects = raycaster.intersectObject(rocketMesh, true);
-
-  if (intersects.length > 0) {
-    // Se houver interseção, anima o foguete
-    audioRocket.volume = 0.3
-    audioRocket.play();
-    animateRocket();
-  }
-});
-
-// Criar o grupo para o planeta e os objetos
-const planetGroup = new THREE.Group();
-
-// GFLT - Carregar o foguete
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2(); // Para armazenar as coordenadas do mouse
-
-let rocketHovered = false; // Para controlar o estado do hover
-
-// Detectar hover e clique no foguete
-window.addEventListener("mousemove", (event) => {
-  // Atualiza a posição do mouse com base no movimento
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  // Atualiza o raycaster com a posição do mouse
-  raycaster.setFromCamera(mouse, camera);
-
-  // Detecta as interseções
-  const intersects = raycaster.intersectObject(rocketMesh, true);
-
-  if (intersects.length > 0) {
-    // Se o mouse estiver sobre o foguete, mudar o cursor para pointer
-    document.body.style.cursor = "pointer";
-    rocketHovered = true;
-  } else {
-    // Caso contrário, mudar o cursor de volta para o padrão
-    document.body.style.cursor = "default";
-    rocketHovered = false;
-  }
-});
-
-// Carregar o foguete com o GLTFLoader
-const gltfLoader = new GLTFLoader();
-gltfLoader.load("/models/rocket.gltf", (gltf) => {
-  rocketMesh = gltf.scene;
-  rocketMesh.traverse(function (node) {
-    if (node.isMesh) {
-      node.castShadow = true;
-    }
-  });
-  rocketMesh.scale.set(0.012, 0.012, 0.012);
-  rocketMesh.position.y = 0.85;
-  rocketMesh.position.z = 3.2;
-  rocketMesh.position.x = 4.23;
-  rocketMesh.castShadow = true;
-
-  // Adiciona o foguete ao grupo do planeta
-  planetGroup.add(rocketMesh);
-});
 
 /**
  * Fonts
@@ -348,6 +217,10 @@ cameraFolder.add(camera.rotation, "y", -Math.PI, Math.PI).name("Rotation Y");
 cameraFolder.add(camera.rotation, "z", -Math.PI, Math.PI).name("Rotation Z");
 cameraFolder.open();
 
+/**
+ * Models
+ */
+createRocket(planetGroup, camera, scene);
 
 /**
  * Renderer
@@ -374,74 +247,12 @@ window.addEventListener("resize", () => {
 });
 
 // Create and inject the About Me panel into the DOM
-let aboutMeShown = false;
-
-function createAboutMePanel() {
-  const panel = document.createElement("div");
-  panel.id = "aboutMePanel";
-
-  const closeButton = document.createElement("button");
-  closeButton.classList.add("close-btn");
-  closeButton.textContent = "X";
-  closeButton.style.position = "absolute";
-  closeButton.style.top = "20px";
-  closeButton.style.right = "30px";
-  closeButton.style.fontSize = "24px";
-  closeButton.style.cursor = "pointer";
-  closeButton.style.color = "white";
-  closeButton.style.background = "none";
-  closeButton.style.border = "none";
-  closeButton.onclick = closeAboutMe;
-
-  const aboutContent = document.createElement("div");
-  aboutContent.classList.add("about-content");
-
-  const heading = document.createElement("h1");
-  heading.textContent = "About Me";
-
-  const experienceYears = new Date().getFullYear() - 2016;
-
-  const aboutMeText = `
-    Hi, I'm Matheus Morett, a passionate software engineer with over ${experienceYears} years of professional experience in the tech industry. 
-    From the moment I wrote my first line of code in January 2014, I’ve been dedicated to crafting solutions that don’t just work but excel.
-    <br><br>
-    Throughout my career, I’ve been fortunate to collaborate with both early and late-stage startups, 
-    delivering impactful products that have reached millions of users worldwide. I thrive in fast-paced environments 
-    where innovation is key, always pushing boundaries to bring the best possible user experiences to life.
-    <br><br>
-    While I’m a FullStack developer with a focus on FrontEnd, I embrace every challenge. 
-    My true passion lies in solving complex problems and bringing high-quality solutions to market.
-    <br><br>
-    My primary tech stack includes TypeScript, React, and Node, but I’m constantly learning and growing to stay ahead of the curve. 
-    <br><br>
-    Right now, what excites me most is building scalable, testable, and maintainable software—engineering solutions 
-    that not only work today but will stand the test of time.
-  `;
-
-
-  const paragraph = document.createElement("p");
-  paragraph.innerHTML = aboutMeText;
-
-  aboutContent.appendChild(heading);
-  aboutContent.appendChild(paragraph);
-  panel.appendChild(closeButton);
-  panel.appendChild(aboutContent);
-
-  document.body.appendChild(panel);
-}
+window.aboutMeShown = false;
 
 function showAboutMe() {
   const panel = document.getElementById("aboutMePanel");
   if (panel) {
     panel.style.display = "flex";
-  }
-}
-
-function closeAboutMe() {
-  const panel = document.getElementById("aboutMePanel");
-  if (panel) {
-    panel.style.display = "none";
-    aboutMeShown = false;
   }
 }
 
@@ -460,7 +271,7 @@ const cammeraOutToShowAboutMe = isMobile ? 50 : 30
 window.addEventListener("wheel", (event) => {
   event.preventDefault();
 
-  if (aboutMeShown) {
+  if (window.aboutMeShown) {
     return;
   }
 
@@ -484,7 +295,7 @@ window.addEventListener("wheel", (event) => {
 
   if (camera.position.z >= cammeraOutToShowAboutMe) {
     showAboutMe();
-    aboutMeShown = true;
+    window.aboutMeShown = true;
   }
 });
 
@@ -524,6 +335,9 @@ const clock = new THREE.Clock();
 const tick = () => {
   // Rotacionar o grupo do planeta e seus objetos
   planetGroup.rotation.y += 0.0003;
+
+  // Atualizar o parallax
+  updateParallax(camera);
 
   // Clock
   const elapsedTime = clock.getElapsedTime();
@@ -566,7 +380,7 @@ const tick = () => {
 
   flagMesh.geometry.attributes.position.needsUpdate = true;
 
-  updateParticles(); // Atualiza a posição das partículas de fogo do foguete
+  updateRocketParticles(); // Atualiza a posição das partículas de fogo do foguete
 
   // Render
   renderer.render(scene, camera);
