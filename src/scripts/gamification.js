@@ -57,6 +57,7 @@ function showCompletionMessage() {
   closeButton.classList.add("close-btn");
   closeButton.innerHTML = `<i class="fas fa-times"></i>`;
   closeButton.onclick = () => {
+    window.starModalIsOpened = false;
     document.body.removeChild(modal);
   };
 
@@ -70,6 +71,7 @@ function showCompletionMessage() {
     <img width="350px" alt="Me and my dad very happy" src="https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGNuMDFoeGpqdTNsMTRsendueTVpZzk4eTdlZmc4bnZwcGY5ZWNxZCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/0v1SjDrCSzf5BAov0Y/giphy.webp" />
     <p>Now you know me very well, don't hesitate to contact so we can crush some projects. =)</p>
   `;
+  window.starModalIsOpened = true;
 
   modal.appendChild(closeButton);
   modal.appendChild(content);
