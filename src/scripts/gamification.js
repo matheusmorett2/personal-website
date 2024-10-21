@@ -64,7 +64,7 @@ function showCompletionMessage() {
   content.classList.add("stars-content")
 
   content.innerHTML = `
-    <h2>Congratulations!</h2>
+    <h1>Congratulations!</h1>
     <p>You've completed all hidden quests!</p>
     <p>Know you know me very well, dont't hesitate to contact so we can crush some projects =)</p>
   `;
