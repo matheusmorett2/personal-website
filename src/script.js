@@ -1,14 +1,15 @@
 import "./style.css";
 import "./sound";
+import './scripts/close-modals-listener'
 
 import * as THREE from "three";
 
+import { createAboutMePanel, showAboutMe } from "./scripts/about-me";
 import { createRocket, updateRocketParticles } from "./scripts/rocket";
 
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { GUI } from "lil-gui";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-import { createAboutMePanel } from "./scripts/about-me";
 import { initStars } from "./scripts/interactive-stars";
 import { isMobile } from "./utils";
 import { updateParallax } from "./scripts/parallax";
@@ -46,7 +47,7 @@ const flagTexture = textureLoader.load("/textures/flag/brasil.jpeg");
  */
 let groupText
 const fontLoader = new FontLoader();
-fontLoader.load("/fonts/helvetiker_regular.typeface.json", (font) => {
+fontLoader.load("/fonts/Comic Neue_Bold.json", (font) => {
   const material = new THREE.MeshNormalMaterial();
   const fontSize = 0.5;
   const fontStyle = {
@@ -250,16 +251,6 @@ window.addEventListener("resize", () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
-// Create and inject the About Me panel into the DOM
-window.aboutMeShown = false;
-
-function showAboutMe() {
-  const panel = document.getElementById("aboutMePanel");
-  if (panel) {
-    panel.style.display = "flex";
-  }
-}
-
 // Create the About Me panel when the page loads
 createAboutMePanel();
 
@@ -272,36 +263,50 @@ const maxOffset = 0.5; // O quanto a câmera pode se mover para esquerda/direita
 const zoomFocusOffsetY = 1; // O quanto o foco do zoom está acima (ajustar conforme desejado)
 const cammeraOutToShowAboutMe = isMobile ? 50 : 30
 
+let lastCameraPositionZ = camera.position.z; // Store the initial camera position
+
 window.addEventListener("wheel", (event) => {
   event.preventDefault();
 
+  // If "About Me" is shown, prevent further zoom actions
   if (window.aboutMeShown) {
     return;
   }
+
+  // Track the previous camera position
+  const previousCameraPositionZ = camera.position.z;
 
   // Zoom in/out
   camera.position.z += event.deltaY * 0.1;
   camera.position.z = Math.min(Math.max(camera.position.z, 10), cammeraOutToShowAboutMe);
 
-  // Mover a câmera levemente nos eixos X e Y conforme o zoom
-  cameraOffsetX += event.deltaX * 0.002; // Movimento suave no eixo X
-  cameraOffsetY += event.deltaY * 0.002; // Movimento suave no eixo Y
+  // Only process the zoom actions if the camera position has actually changed
+  if (camera.position.z !== previousCameraPositionZ) {
+    // Mover a câmera levemente nos eixos X e Y conforme o zoom
+    cameraOffsetX += event.deltaX * 0.002; // Movimento suave no eixo X
+    cameraOffsetY += event.deltaY * 0.002; // Movimento suave no eixo Y
 
-  // Limitar o movimento nos eixos X e Y
-  cameraOffsetX = Math.min(Math.max(cameraOffsetX, -maxOffset), maxOffset);
-  cameraOffsetY = Math.min(Math.max(cameraOffsetY, -maxOffset), maxOffset);
+    // Limitar o movimento nos eixos X e Y
+    cameraOffsetX = Math.min(Math.max(cameraOffsetX, -maxOffset), maxOffset);
+    cameraOffsetY = Math.min(Math.max(cameraOffsetY, -maxOffset), maxOffset);
 
-  // Ajustar a posição da câmera com o foco acima
-  camera.position.x = cameraOffsetX;
-  camera.position.y = (camera.position.z / 10) * 4.5 + cameraOffsetY + zoomFocusOffsetY; // Ajustar a altura para o foco acima
+    // Ajustar a posição da câmera com o foco acima
+    camera.position.x = cameraOffsetX;
+    camera.position.y = (camera.position.z / 10) * 4.5 + cameraOffsetY + zoomFocusOffsetY; // Ajustar a altura para o foco acima
 
-  camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix();
 
-  if (camera.position.z >= cammeraOutToShowAboutMe) {
-    showAboutMe();
-    window.aboutMeShown = true;
+    // If camera has zoomed out far enough, show "About Me"
+    if (camera.position.z >= cammeraOutToShowAboutMe && lastCameraPositionZ !== camera.position.z) {
+      showAboutMe();
+      window.aboutMeShown = true;
+    }
   }
+
+  // Update the last known camera position
+  lastCameraPositionZ = camera.position.z;
 });
+
 
 
 /**
@@ -329,25 +334,24 @@ export function createStars() {
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2(); // Para armazenar as coordenadas do mouse
 window.addEventListener("mousemove", (event) => {
-  // Atualiza a posição do mouse com base no movimento
+  // Update mouse position based on movement
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  // Atualiza o raycaster com a posição do mouse
+  // Update the raycaster with the mouse position
   raycaster.setFromCamera(mouse, camera);
 
-  // Detecta as interseções
+  // Check intersections for stars and rocket
   const intersectsWithStar1 = raycaster.intersectObject(stars[0], true);
   const intersectsWithStar2 = raycaster.intersectObject(stars[1], true);
   const intersectsWithStar3 = raycaster.intersectObject(stars[2], true);
   const intersectsWithRocket = raycaster.intersectObject(planetGroup.children[0], true);
 
+  // Change the cursor style based on the intersection
   if (intersectsWithStar1.length > 0 || intersectsWithStar2.length > 0 ||
     intersectsWithStar3.length > 0 || intersectsWithRocket.length > 0) {
-    // Se o mouse estiver sobre o foguete, mudar o cursor para pointer
     document.body.style.cursor = "pointer";
   } else {
-    // Caso contrário, mudar o cursor de volta para o padrão
     document.body.style.cursor = "default";
   }
 });

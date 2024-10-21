@@ -36,7 +36,7 @@ body {
 }
 
 .container {
-  font-family: Arial, "Sans-serif";
+  font-family: 'Comic Neue', cursive;
   position: fixed;
   bottom: 5%;
   width: 100%;
@@ -120,7 +120,7 @@ a:hover {
 .modal {
   display: none; /* Hidden by default */
   position: fixed;
-  font-family: sans-serif;
+  font-family: 'Comic Neue', cursive;
   top: 0;
   left: 0;
   width: 100vw;
@@ -163,4 +163,32 @@ a:hover {
   justify-content: center;
   flex-direction: column;
   text-align: center !important;
+}
+
+.stars-content p {
+  text-align: center !important;
+}
+
+.stars-content h2 {
+  color: yellow;
+}
+
+/* Top left completed quests */
+#completionTracker {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  font-family: 'Comic Neue', cursive;
+  font-size: 16px;
+  color: white;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  border-radius: 10px;
+  z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.completed {
+  color: #FFD700; /* Gold color */
+  transform: scale(1.1);
 }

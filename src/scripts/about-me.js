@@ -1,3 +1,5 @@
+import { checkQuests } from "./gamification";
+
 export function createAboutMePanel() {
   const panel = document.createElement("div");
   panel.id = "aboutMePanel";
@@ -5,7 +7,7 @@ export function createAboutMePanel() {
 
   const closeButton = document.createElement("button");
   closeButton.classList.add("close-btn");
-  closeButton.textContent = "X";
+  closeButton.innerHTML = `<i class="fas fa-times"></i>`;
   closeButton.onclick = closeAboutMe;
 
   const aboutContent = document.createElement("div");
@@ -45,10 +47,23 @@ export function createAboutMePanel() {
   document.body.appendChild(panel);
 }
 
-function closeAboutMe() {
+export function showAboutMe() {
   const panel = document.getElementById("aboutMePanel");
   if (panel) {
+    panel.style.display = "flex";
+  }
+}
+
+function closeAboutMe() {
+  const panel = document.getElementById("aboutMePanel");
+  
+  window.questTracker.aboutMe = true;
+  checkQuests();
+  
+  if (panel) {
     panel.style.display = "none";
-    window.aboutMeShown = false;
+    setTimeout(() => {
+      window.aboutMeShown = false;
+    }, 100)
   }
 }

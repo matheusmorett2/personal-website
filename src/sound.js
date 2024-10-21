@@ -1,5 +1,6 @@
 const musicCredit = document.getElementById("music-by");
 const music = document.getElementById("music");
+music.volume = 0.5;
 const volumeOnButton = document.getElementById("volume-on");
 const volumeOffButton = document.getElementById("volume-off");
 volumeOffButton.addEventListener("click", () => {

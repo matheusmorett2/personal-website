@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { checkQuests } from "./gamification";
 import { gsap } from "gsap";
 
 let rocketMesh;
@@ -107,6 +108,11 @@ function animateRocket(scene) {
     ease: "power2.inOut",  // Efeito de aceleração
     onUpdate: () => createFireParticles(scene), // Criar partículas durante a animação
   });
+
+  setTimeout(() => {
+    window.questTracker.rocket = true;
+    checkQuests(); // Call after the rocket animation finishes
+  }, 200)
 
   // Animação de contração no eixo Y
   gsap.to(rocketMesh.scale, {

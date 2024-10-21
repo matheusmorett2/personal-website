@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { GUI } from "lil-gui";
+import { checkQuests } from "./gamification";
 import { gsap } from "gsap";
 
 let stars = [];
@@ -32,15 +33,15 @@ function createInteractiveStars() {
     const star = new THREE.Mesh(starGeometry, starMaterial);
 
     if (i === 0) {
-      star.position.set(-5.2, 3.8, 1.13);
+      star.position.set(-6.2, 3.8, 1.13);
     }
 
     if (i === 1) {
-      star.position.set(1.64, 5, 1.13);
+      star.position.set(0.64, 5, 1.13);
     }
 
     if (i === 2) {
-      star.position.set(7.24, 3.4, 1.13);
+      star.position.set(6.24, 3.4, 1.13);
     }
 
     scene.add(star);
@@ -118,8 +119,21 @@ function createStarClickModal(index) {
   modal.classList.add("modal");
   const closeButton = document.createElement("button");
   closeButton.classList.add('close-btn')
-  closeButton.textContent = "X";
-  closeButton.onclick = () => document.body.removeChild(modal);
+  closeButton.innerHTML = `<i class="fas fa-times"></i>`;
+  closeButton.onclick = () => {
+    document.body.removeChild(modal);
+
+    // Mark the quest complete when modal is closed
+    if (index === 0) {
+      window.questTracker.star1 = true;
+    } else if (index === 1) {
+      window.questTracker.star2 = true;
+    } else if (index === 2) {
+      window.questTracker.star3 = true;
+    }
+
+    checkQuests(); // Update progress when a star quest is completed
+  };
 
   const paragraph = document.createElement("p");
   paragraph.classList.add("stars-content")
