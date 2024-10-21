@@ -145,6 +145,23 @@ export function createRocket(planetGroup, camera, scene) {
 
     // Adiciona o foguete ao grupo do planeta
     planetGroup.add(rocketMesh);
+
+    window.addEventListener("mousemove", (event) => {
+      // Update mouse position based on movement
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
+      // Update the raycaster with the mouse position
+      raycaster.setFromCamera(mouse, camera);
+    
+      // Check intersections for stars and rocket
+      const intersectsWithRocketMesh = raycaster.intersectObject(rocketMesh, true);
+    
+      // Change the cursor style based on the intersection
+      if (intersectsWithRocketMesh.length > 0) {
+        document.body.style.cursor = "pointer";
+      }
+    });
   });
 
   // Detectar clique no foguete

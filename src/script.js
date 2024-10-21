@@ -237,7 +237,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 
 // Call the interactive stars module
-const stars = initStars(scene, camera, renderer);
+initStars(scene, camera, renderer);
 
 /**
  * Tamanho
@@ -329,32 +329,6 @@ export function createStars() {
     scene.add(star);
   }
 }
-
-// Detectar hover e clique no foguete e estrelas
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2(); // Para armazenar as coordenadas do mouse
-window.addEventListener("mousemove", (event) => {
-  // Update mouse position based on movement
-  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-  // Update the raycaster with the mouse position
-  raycaster.setFromCamera(mouse, camera);
-
-  // Check intersections for stars and rocket
-  const intersectsWithStar1 = raycaster.intersectObject(stars[0], true);
-  const intersectsWithStar2 = raycaster.intersectObject(stars[1], true);
-  const intersectsWithStar3 = raycaster.intersectObject(stars[2], true);
-  const intersectsWithRocket = raycaster.intersectObject(planetGroup.children[0], true);
-
-  // Change the cursor style based on the intersection
-  if (intersectsWithStar1.length > 0 || intersectsWithStar2.length > 0 ||
-    intersectsWithStar3.length > 0 || intersectsWithRocket.length > 0) {
-    document.body.style.cursor = "pointer";
-  } else {
-    document.body.style.cursor = "default";
-  }
-});
 
 /**
  * Mini gravidade
