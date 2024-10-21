@@ -269,7 +269,7 @@ window.addEventListener("wheel", (event) => {
   event.preventDefault();
 
   // If "About Me" is shown, prevent further zoom actions
-  if (window.aboutMeShown) {
+  if (window.aboutMeShown || window.starModalIsOpened) {
     return;
   }
 

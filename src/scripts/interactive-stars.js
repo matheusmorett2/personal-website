@@ -18,10 +18,10 @@ export function initStars(sceneRef, cameraRef, rendererRef) {
   renderer = rendererRef;
 
   raycaster = new THREE.Raycaster();
-  
+
   // Listen for clicks and mouse movement on stars
   window.addEventListener("click", onClick);
-  
+
   return createInteractiveStars();
 }
 
@@ -77,15 +77,15 @@ function createInteractiveStars() {
     // Update mouse position based on movement
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
+
     // Update the raycaster with the mouse position
     raycaster.setFromCamera(mouse, camera);
-  
+
     // Check intersections for stars and rocket
     const intersectsWithStar1 = raycaster.intersectObject(stars[0], true);
     const intersectsWithStar2 = raycaster.intersectObject(stars[1], true);
     const intersectsWithStar3 = raycaster.intersectObject(stars[2], true);
-  
+
     // Change the cursor style based on the intersection
     if (intersectsWithStar1.length > 0 || intersectsWithStar2.length > 0 ||
       intersectsWithStar3.length > 0) {
@@ -93,7 +93,7 @@ function createInteractiveStars() {
     } else {
       document.body.style.cursor = "default";
     }
-  });  
+  });
 
   return stars;
 }
@@ -134,6 +134,8 @@ const CONTENT_2 = `
   <img src="/images/bosnia.jpeg" width="350' alt="Me at Bosnia and Herzegovina" />
 `
 
+window.starModalIsOpened = false
+
 // Create a modal on star click
 function createStarClickModal(index) {
   const modal = document.createElement("div");
@@ -153,6 +155,8 @@ function createStarClickModal(index) {
     } else if (index === 2) {
       window.questTracker.star3 = true;
     }
+
+    window.starModalIsOpened = false;
 
     checkQuests(); // Update progress when a star quest is completed
   };
@@ -175,6 +179,7 @@ function createStarClickModal(index) {
   modal.appendChild(closeButton);
   modal.appendChild(paragraph);
   modal.style.display = "flex";
+  window.starModalIsOpened = true;
   document.body.appendChild(modal);
 }
 
